@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Scanning… — Privacy Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>🔍 Privacy Scan in Progress</h1>
+  <p class="subtitle">Results appear live as each query completes.</p>
+</div>
+
+<div class="card">
+  <div class="progress-section">
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <p class="progress-text" id="progress-text">Starting scan…</p>
+  </div>
+  <div class="scan-stats">
+    <span class="scan-stat">📄 <strong id="result-count">0</strong> results found</span>
+    <span class="scan-stat">⏱ <strong id="query-progress">0 / 0</strong> queries done</span>
+  </div>
+</div>
+
+<div id="done-actions" class="page-actions" style="display:none">
+  <a href="/results" class="btn btn-primary btn-lg">📋 View &amp; Review All Results</a>
+  <a href="/report" class="btn btn-ghost">📊 Report</a>
+</div>
+
+<div id="results-live">
+  <h2 class="live-results-heading" id="live-heading" style="display:none">Live Results</h2>
+  <div id="results-container" class="results-list"></div>
+</div>
+
+<script>
+const SCAN_ID = "{{ scan_id }}";
+const knownIds = new Set();
+let timer = null;
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s || "";
+  return d.innerHTML;
+}
+
+function sourceClass(src) {
+  const map = {google:"source-google", serpapi:"source-serpapi",
+               duckduckgo:"source-duckduckgo", tineye:"source-tineye", hibp:"source-hibp"};
+  return map[src] || "";
+}
+
+function addResultCard(r) {
+  if (knownIds.has(r.id)) return;
+  knownIds.add(r.id);
+  document.getElementById("live-heading").style.display = "block";
+  const container = document.getElementById("results-container");
+  const div = document.createElement("div");
+  div.className = "result-card card fade-in";
+  div.innerHTML =
+    '<div class="result-header">' +
+      '<span class="source-badge ' + sourceClass(r.source) + '">' + esc(r.source) + '</span>' +
+      '<span class="result-query">' + esc(r.query_used) + '</span>' +
+    '</div>' +
+    '<div class="result-title">' + esc(r.title) + '</div>' +
+    '<a class="result-url" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.url) + '</a>' +
+    '<div class="result-snippet">' + esc(r.snippet) + '</div>';
+  container.appendChild(div);
+}
+
+async function poll() {
+  try {
+    const resp = await fetch("/search/status/" + SCAN_ID);
+    if (!resp.ok) return;
+    const data = await resp.json();
+
+    const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
+    document.getElementById("progress-bar").style.width = pct + "%";
+    document.getElementById("query-progress").textContent = data.completed + " / " + data.total;
+    document.getElementById("result-count").textContent = data.results.length;
+
+    for (const r of data.results) addResultCard(r);
+
+    if (data.status === "running") {
+      document.getElementById("progress-text").textContent = "Scanning… " + pct + "% complete";
+    } else {
+      clearInterval(timer);
+      if (data.status === "done") {
+        document.getElementById("progress-text").textContent = "✅ Scan complete!";
+        document.getElementById("progress-bar").style.width = "100%";
+        document.getElementById("progress-bar").classList.add("done");
+      } else {
+        document.getElementById("progress-text").textContent = "⚠ Scan finished with status: " + data.status;
+      }
+      document.getElementById("done-actions").style.display = "flex";
+    }
+  } catch (e) {
+    console.error("poll error", e);
+  }
+}
+
+timer = setInterval(poll, 2000);
+poll();
+</script>
+{% endblock %}

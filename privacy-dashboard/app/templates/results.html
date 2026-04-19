@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Results — Privacy Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Scan Results</h1>
+  <p class="subtitle">Review each finding and take action. <a href="/search">Re-run scan</a> · <a href="/report">View Report</a></p>
+</div>
+
+<!-- Summary bar -->
+<div class="status-bar">
+  <a href="/results" class="status-pill total {{ 'active' if not current_status else '' }}">
+    Total <strong>{{ total_counts.pending + total_counts.safe + total_counts.reviewed + total_counts.flagged }}</strong>
+  </a>
+  <a href="/results?status=pending" class="status-pill pending {{ 'active' if current_status == 'pending' else '' }}">
+    ⏳ Pending <strong>{{ total_counts.pending }}</strong>
+  </a>
+  <a href="/results?status=reviewed" class="status-pill reviewed {{ 'active' if current_status == 'reviewed' else '' }}">
+    🔍 Reviewed <strong>{{ total_counts.reviewed }}</strong>
+  </a>
+  <a href="/results?status=safe" class="status-pill safe {{ 'active' if current_status == 'safe' else '' }}">
+    ✅ Safe <strong>{{ total_counts.safe }}</strong>
+  </a>
+  <a href="/results?status=flagged" class="status-pill flagged {{ 'active' if current_status == 'flagged' else '' }}">
+    🚫 Flagged <strong>{{ total_counts.flagged }}</strong>
+  </a>
+</div>
+
+<!-- Source filter -->
+{% if sources %}
+<div class="filter-bar">
+  <span>Filter by source:</span>
+  <a href="/results{% if current_status %}?status={{ current_status }}{% endif %}" class="tag {{ 'active' if not current_source else '' }}">All</a>
+  {% for src in sources %}
+  <a href="/results?source={{ src }}{% if current_status %}&status={{ current_status }}{% endif %}"
+     class="tag {{ 'active' if current_source == src else '' }}">{{ src }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not results %}
+<div class="empty-state">
+  <p>No results found{% if current_source or current_status %} for this filter{% endif %}. {% if not current_source and not current_status %}<a href="/search">Run a scan first.</a>{% endif %}</p>
+</div>
+{% else %}
+{% for source_name, source_results in grouped_results.items() %}
+<section class="source-group">
+  <div class="source-group-header">
+    <h2><span class="source-badge source-{{ source_name }}">{{ source_name }}</span></h2>
+    <span class="group-count">{{ source_results|length }} result{% if source_results|length != 1 %}s{% endif %}</span>
+  </div>
+  <div class="results-list">
+  {% for r in source_results %}
+  <div class="result-card status-{{ r.status }}">
+    <div class="result-header">
+      <div class="result-meta">
+        <span class="source-badge source-{{ r.source }}">{{ r.source }}</span>
+        <span class="status-badge status-{{ r.status }}">
+          {% if r.status == 'pending' %}⏳ Pending
+          {% elif r.status == 'safe' %}✅ Safe
+          {% elif r.status == 'reviewed' %}🔍 Reviewed
+          {% elif r.status == 'flagged' %}🚫 Flagged{% endif %}
+        </span>
+      </div>
+      <div class="result-query">Query: <code>{{ r.query_used }}</code></div>
+    </div>
+    <h3 class="result-title">
+      <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">{{ r.title or r.url }}</a>
+    </h3>
+    <p class="result-url">{{ r.url }}</p>
+    {% if r.snippet %}<p class="result-snippet">{{ r.snippet }}</p>{% endif %}
+
+    <div class="result-actions">
+      <form method="post" action="/results/{{ r.id }}/action" style="display:inline">
+        <input type="hidden" name="action" value="safe">
+        <button type="submit" class="btn btn-sm btn-safe {{ 'btn-active' if r.status == 'safe' else '' }}">✅ Safe</button>
+      </form>
+      <form method="post" action="/results/{{ r.id }}/action" style="display:inline">
+        <input type="hidden" name="action" value="reviewed">
+        <button type="submit" class="btn btn-sm btn-review {{ 'btn-active' if r.status == 'reviewed' else '' }}">🔍 Reviewed</button>
+      </form>
+      <form method="post" action="/results/{{ r.id }}/action" style="display:inline">
+        <input type="hidden" name="action" value="flagged">
+        <button type="submit" class="btn btn-sm btn-flag {{ 'btn-active' if r.status == 'flagged' else '' }}">🚫 Flag for Removal</button>
+      </form>
+      {% if r.status == 'flagged' and r.removal_draft %}
+      <a href="/results/{{ r.id }}/draft" class="btn btn-sm btn-draft">📄 View Removal Draft</a>
+      {% endif %}
+      <form method="post" action="/results/{{ r.id }}/action" style="display:inline">
+        <input type="hidden" name="action" value="pending">
+        <button type="submit" class="btn btn-sm btn-ghost">↩ Reset</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% endif %}
+{% endblock %}

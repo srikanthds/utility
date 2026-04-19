@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Report — Privacy Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Privacy Report</h1>
+  {% if profile %}
+  <p class="subtitle">Summary for <strong>{{ profile.name }}</strong> · <a href="/report/export" download>⬇ Export CSV</a></p>
+  {% endif %}
+</div>
+
+{% if not profile or stats.total == 0 %}
+<div class="empty-state">
+  <p>No scan results yet. <a href="/search">Run a scan first.</a></p>
+</div>
+{% else %}
+
+<!-- Summary cards -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-num">{{ stats.total }}</div>
+    <div class="stat-label">Total Found</div>
+  </div>
+  <div class="stat-card stat-pending">
+    <div class="stat-num">{{ stats.pending }}</div>
+    <div class="stat-label">⏳ Pending Review</div>
+  </div>
+  <div class="stat-card stat-safe">
+    <div class="stat-num">{{ stats.safe }}</div>
+    <div class="stat-label">✅ Marked Safe</div>
+  </div>
+  <div class="stat-card stat-reviewed">
+    <div class="stat-num">{{ stats.reviewed }}</div>
+    <div class="stat-label">🔍 Reviewed</div>
+  </div>
+  <div class="stat-card stat-flagged">
+    <div class="stat-num">{{ stats.flagged }}</div>
+    <div class="stat-label">🚫 Flagged for Removal</div>
+  </div>
+</div>
+
+<!-- By source -->
+<div class="card">
+  <h2>Results by Source</h2>
+  <table class="report-table">
+    <thead><tr><th>Source</th><th>Count</th></tr></thead>
+    <tbody>
+      {% for src, cnt in by_source.items() %}
+      <tr>
+        <td><span class="source-badge source-{{ src }}">{{ src }}</span></td>
+        <td><strong>{{ cnt }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Actions -->
+<div class="page-actions">
+  <a href="/results?status=flagged" class="btn btn-flag">🚫 Review Flagged Items</a>
+  <a href="/results?status=pending" class="btn btn-primary">⏳ Review Pending Items</a>
+  <a href="/report/export" class="btn btn-ghost" download>⬇ Export CSV</a>
+</div>
+
+{% endif %}
+{% endblock %}

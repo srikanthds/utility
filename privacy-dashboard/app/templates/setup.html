@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}API Setup — Privacy Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>API Setup</h1>
+  <p class="subtitle">Configure search sources. DuckDuckGo is always available — all others are optional.</p>
+</div>
+
+{% if all_ok %}
+<div class="alert alert-success">
+  ✅ All configured sources are working. <a href="/profile">Continue to Profile →</a>
+</div>
+{% endif %}
+
+<!-- DuckDuckGo — always available -->
+<div class="card service-card status-ok">
+  <div class="service-header">
+    <div>
+      <strong>DuckDuckGo</strong>
+      <span class="badge badge-ok">Always available</span>
+    </div>
+    <div class="service-meta">No API key required · Unlimited</div>
+  </div>
+</div>
+
+{% for svc_key, svc in service_info.items() %}
+{% set status = api_status[svc_key] %}
+<div class="card service-card status-{{ status }}">
+  <div class="service-header">
+    <div>
+      <strong>{{ svc.name }}</strong>
+      {% if status == 'ok' %}<span class="badge badge-ok">✅ Connected</span>
+      {% elif status == 'skipped' %}<span class="badge badge-skip">⏭ Skipped</span>
+      {% elif status == 'missing' %}<span class="badge badge-warn">⚠ No key</span>
+      {% else %}<span class="badge badge-err">❌ {{ status|capitalize }}</span>{% endif %}
+    </div>
+    <div class="service-meta">{{ svc.description }} · {{ svc.free_tier }}</div>
+  </div>
+
+  {% if status not in ('ok', 'skipped') %}
+  <div class="service-body">
+    <p>Get a free key at: <a href="{{ svc.signup_url }}" target="_blank" rel="noopener">{{ svc.signup_label }}</a></p>
+    <form method="post" action="/setup/save-key" class="key-form">
+      <input type="hidden" name="service" value="{{ svc_key }}">
+      {% for key_def in svc.api_keys %}
+      <div class="form-row">
+        <label>{{ key_def.label }}</label>
+        <input type="password" name="{{ key_def.field }}" placeholder="{{ key_def.placeholder }}" autocomplete="off">
+      </div>
+      {% endfor %}
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save & Test</button>
+      </div>
+    </form>
+    <form method="post" action="/setup/skip" style="display:inline">
+      <input type="hidden" name="service" value="{{ svc_key }}">
+      <button type="submit" class="btn btn-ghost">Skip this source</button>
+    </form>
+  </div>
+  {% elif status == 'skipped' %}
+  <div class="service-body">
+    <form method="post" action="/setup/unskip">
+      <input type="hidden" name="service" value="{{ svc_key }}">
+      <button type="submit" class="btn btn-ghost">Enable this source</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
+<div class="page-actions">
+  <form method="post" action="/setup/continue">
+    <button type="submit" class="btn btn-primary btn-lg">Continue to Profile →</button>
+  </form>
+</div>
+{% endblock %}

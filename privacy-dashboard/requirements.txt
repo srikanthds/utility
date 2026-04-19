@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+aiosqlite
+httpx
+pydantic-settings
+python-dotenv
+ddgs

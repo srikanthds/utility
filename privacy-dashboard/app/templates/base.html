@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Privacy Dashboard{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="sidebar-brand">🔍 Privacy<br>Dashboard</div>
+    <ul class="nav-steps">
+      <li class="{{ 'active' if request.url.path == '/setup' else '' }}">
+        <a href="/setup"><span class="step-num">1</span> API Setup</a>
+      </li>
+      <li class="{{ 'active' if request.url.path == '/profile' else '' }}">
+        <a href="/profile"><span class="step-num">2</span> Your Profile</a>
+      </li>
+      <li class="{{ 'active' if '/search' in request.url.path else '' }}">
+        <a href="/search"><span class="step-num">3</span> Run Scan</a>
+      </li>
+      <li class="{{ 'active' if request.url.path == '/results' else '' }}">
+        <a href="/results"><span class="step-num">4</span> Review Results</a>
+      </li>
+      <li class="{{ 'active' if request.url.path == '/report' else '' }}">
+        <a href="/report"><span class="step-num">5</span> Report</a>
+      </li>
+    </ul>
+    <div class="sidebar-note">🔒 All data stored locally</div>
+  </nav>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Run Scan — Privacy Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Run Privacy Scan</h1>
+  <p class="subtitle">Searching the web for public content associated with your details.</p>
+</div>
+
+<div class="card">
+  <div class="profile-summary">
+    <div class="profile-item"><span class="label">Name</span> <strong>{{ profile.name }}</strong></div>
+    <div class="profile-item"><span class="label">Email</span> <strong>{{ profile.email }}</strong></div>
+    {% if profile.photo_path %}
+    <div class="profile-item"><span class="label">Photo</span> <strong>{{ profile.photo_path.split('/')[-1] }}</strong> (reverse image search enabled)</div>
+    {% endif %}
+  </div>
+
+  <div class="queries-preview">
+    <h3>Search queries that will be run:</h3>
+    <ul class="query-list">
+      <li><code>"{{ profile.name }}"</code></li>
+      <li><code>"{{ profile.email }}"</code></li>
+      <li><code>"{{ profile.name }}" email</code></li>
+      <li><code>"{{ profile.name }}" contact</code></li>
+      <li><code>"{{ profile.name }}" site:facebook.com</code></li>
+      <li><code>"{{ profile.name }}" site:linkedin.com</code></li>
+      <li><code>"{{ profile.name }}" site:twitter.com</code></li>
+      <li><code>"{{ profile.name }}" site:instagram.com</code></li>
+      <li><code>"{{ profile.name }}" site:reddit.com</code></li>
+      <li><code>"{{ profile.name }}" -site:linkedin.com -site:facebook.com</code></li>
+    </ul>
+  </div>
+
+  <div class="privacy-note">
+    ⚠ This will send search queries to the configured search APIs. Your name and email will appear in these queries. No other personal data is transmitted.
+  </div>
+
+  <form method="post" action="/search" id="scan-form">
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-lg" id="scan-btn" onclick="startScan()">
+        🔍 Start Scan
+      </button>
+      <a href="/profile" class="btn btn-ghost">Edit Profile</a>
+    </div>
+  </form>
+
+  <div id="scanning-msg" class="scanning-msg" style="display:none">
+    <div class="spinner"></div>
+    <p>Scanning… this may take 30–60 seconds. Do not close this tab.</p>
+  </div>
+</div>
+
+<script>
+function startScan() {
+  document.getElementById('scan-btn').disabled = true;
+  document.getElementById('scan-btn').textContent = 'Scanning…';
+  document.getElementById('scanning-msg').style.display = 'flex';
+}
+</script>
+{% endblock %}
