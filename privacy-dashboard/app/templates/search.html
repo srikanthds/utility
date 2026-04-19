@@ -35,9 +35,9 @@
     ⚠ This will send search queries to the configured search APIs. Your name and email will appear in these queries. No other personal data is transmitted.
   </div>
 
-  <form method="post" action="/search" id="scan-form">
+  <form id="scan-form">
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary btn-lg" id="scan-btn" onclick="startScan()">
+      <button type="button" class="btn btn-primary btn-lg" id="scan-btn" onclick="startScan()">
         🔍 Start Scan
       </button>
       <a href="/profile" class="btn btn-ghost">Edit Profile</a>
@@ -46,15 +46,38 @@
 
   <div id="scanning-msg" class="scanning-msg" style="display:none">
     <div class="spinner"></div>
-    <p>Scanning… this may take 30–60 seconds. Do not close this tab.</p>
+    <p>Submitting scan request…</p>
   </div>
+
+  <div id="error-msg" class="privacy-note" style="display:none"></div>
 </div>
 
 <script>
-function startScan() {
-  document.getElementById('scan-btn').disabled = true;
-  document.getElementById('scan-btn').textContent = 'Scanning…';
-  document.getElementById('scanning-msg').style.display = 'flex';
+async function startScan() {
+  var btn = document.getElementById('scan-btn');
+  var msg = document.getElementById('scanning-msg');
+  var errDiv = document.getElementById('error-msg');
+
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  msg.style.display = 'flex';
+  errDiv.style.display = 'none';
+
+  try {
+    var resp = await fetch('/search', {method: 'POST'});
+    // fetch auto-follows the 303 redirect; resp.url is the progress page
+    if (resp.ok) {
+      window.location.href = resp.url;
+    } else {
+      throw new Error('Server returned ' + resp.status);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '🔍 Start Scan';
+    msg.style.display = 'none';
+    errDiv.style.display = 'block';
+    errDiv.textContent = '❌ Failed to start scan: ' + err.message + '. Please try again.';
+  }
 }
 </script>
 {% endblock %}
